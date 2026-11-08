@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>QR Code do Questionário</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>#qrSrc { display: none; } #qrOut { width: 100%; height: auto; }</style>
+</head>
+<body class="min-h-screen bg-slate-950 font-sans text-slate-100">
+<main class="mx-auto max-w-md px-4 py-8 text-center">
+  <h1 class="text-2xl font-bold">QR Code do questionário</h1>
+  <p class="mt-2 text-sm text-slate-400">Aponte a câmera do celular para testar ou baixe a imagem para imprimir.</p>
+  <div class="mt-6 rounded-2xl bg-white p-3"><canvas id="qrOut"></canvas></div>
+  <div id="qrSrc"></div>
+  <p id="qrUrl" class="mt-3 break-all font-mono text-xs text-cyan-300"></p>
+  <p id="qrWarn" class="mt-2 hidden text-sm text-rose-300">Esta página está aberta localmente. Publique o site e abra qr.html pelo endereço público.</p>
+  <button id="btnDl" class="mt-6 w-full rounded-xl bg-cyan-500 px-6 py-3 font-semibold text-slate-950">Baixar PNG</button>
+</main>
+<script>
+  // Endereço real da aplicação publicada: index.html na mesma pasta desta página.
+  const url = new URL('index.html', location.href).href;
+  $ = (id) => document.getElementById(id);
+  $('qrUrl').textContent = url;
+  if (location.protocol === 'file:' || /localhost|127\.0\.0\.1/.test(location.hostname)) $('qrWarn').classList.remove('hidden');
+
+  new QRCode($('qrSrc'), { text: url, width: 1024, height: 1024, colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
+
+  // Gera PNG 1200x1200 com margem branca (zona de silêncio) para impressão.
+  const out = $('qrOut'); out.width = out.height = 1200;
+  setTimeout(() => {
+    const src = $('qrSrc').querySelector('canvas');
+    const ctx = out.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 1200, 1200);
+    ctx.drawImage(src, 88, 88, 1024, 1024);
+  }, 100);
+
+  $('btnDl').addEventListener('click', () => {
+    out.toBlob((blob) => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = 'qrcode-questionario.png'; a.click();
+      URL.revokeObjectURL(a.href);
+    }, 'image/png');
+  });
+</script>
+</body>
+</html>

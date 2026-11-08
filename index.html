@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Orientação Profissional em TI</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script>
+    // Diagnóstico visível: mostra na tela erros de JavaScript e arquivos desatualizados.
+    (function () {
+      function show(m) {
+        var d = document.createElement('div');
+        d.style.cssText = 'position:fixed;z-index:9999;left:0;right:0;top:0;background:#be123c;color:#fff;padding:12px;font:14px sans-serif';
+        d.textContent = m; (document.body || document.documentElement).appendChild(d);
+      }
+      window.addEventListener('error', function (e) {
+        if (e.message === 'Script error.') return;
+        show('Erro: ' + e.message + (e.filename ? ' (' + e.filename.split('/').pop() + ':' + e.lineno + ')' : ''));
+      });
+    })();
+  </script>
+  <style>
+.view { display: none; }
+.view.active { display: block; animation: fadeUp .35s ease both; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+.field { width: 100%; border-radius: .75rem; border: 1px solid #334155; background: #0f172a; padding: .8rem 1rem; color: #f1f5f9; font-size: 1rem; }
+.field:focus { outline: 2px solid #22d3ee; border-color: transparent; }
+
+.option { width: 100%; text-align: left; border-radius: .75rem; border: 2px solid #1e293b; background: #0f172a; padding: 1rem; color: #e2e8f0; transition: all .2s ease; }
+.option:active { transform: scale(.98); }
+.option.selected { border-color: #22d3ee; background: rgba(6, 182, 212, .18); color: #fff; }
+.option .letter { display: inline-flex; width: 1.75rem; height: 1.75rem; margin-right: .6rem; align-items: center; justify-content: center; border-radius: 9999px; background: #1e293b; font-weight: 700; font-size: .85rem; }
+.option.selected .letter { background: #22d3ee; color: #0f172a; }
+
+/* Fundo da tela inicial: imagem + sobreposição escura para manter o texto legível */
+.intro-bg { position: fixed; inset: 0; z-index: -1; display: none;
+  background: linear-gradient(180deg, rgba(2,6,23,.55) 0%, rgba(2,6,23,.82) 100%), url('img/fundo-tecnologia.svg') center / cover no-repeat; }
+.intro-bg.active { display: block; }
+</style>
+</head>
+<body class="min-h-screen bg-slate-950 font-sans text-slate-100 antialiased">
+<div id="introBg" class="intro-bg active" aria-hidden="true"></div>
+<main class="relative mx-auto flex min-h-screen w-full max-w-xl flex-col px-4 py-6">
+
+  <header id="appHeader" class="mb-6 hidden">
+    <div class="flex items-center gap-3">
+    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/20 font-mono text-cyan-300">&lt;/&gt;</div>
+    <p class="text-sm font-semibold tracking-wide text-slate-300">Orientação Profissional em TI</p>
+    </div>
+  </header>
+
+  <!-- Progresso -->
+  <div id="progress" class="mb-6 hidden">
+    <div class="mb-2 flex justify-between text-xs text-slate-400">
+      <span id="progressLabel"></span><span id="progressPct"></span>
+    </div>
+    <div class="h-2 overflow-hidden rounded-full bg-slate-800">
+      <div id="progressBar" class="h-full rounded-full bg-gradient-to-r from-cyan-400 to-indigo-500 transition-all duration-500" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div id="msg" role="alert" class="mb-4 hidden rounded-xl border px-4 py-3 text-sm"></div>
+
+  <!-- Apresentação -->
+  <section id="view-intro" class="view active">
+    <div class="flex min-h-[85vh] flex-col items-center justify-center text-center">
+      <div class="flex h-20 w-20 items-center justify-center rounded-2xl bg-cyan-500/20 font-mono text-3xl text-cyan-300 ring-1 ring-cyan-400/40">&lt;/&gt;</div>
+      <h1 class="mt-6 text-3xl font-bold leading-tight sm:text-4xl">Orientação Profissional em Tecnologia</h1>
+      <p class="mt-3 text-lg font-medium text-cyan-300">Descubra o que mais combina com você na área de TI</p>
+      <p class="mt-4 max-w-md text-slate-200">Responda 3 perguntas rápidas e conheça suas preferências em três segmentos profissionais.</p>
+      <button id="btnStart" class="mt-8 w-full rounded-xl bg-cyan-500 px-6 py-4 text-lg font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 active:scale-95">Iniciar questionário</button>
+    </div>
+  </section>
+
+  <!-- Perguntas -->
+  <section id="view-quiz" class="view hidden">
+    <h2 id="qTitle" class="text-xl font-semibold leading-snug"></h2>
+    <div id="qOptions" class="mt-5 space-y-3"></div>
+    <div class="mt-6 flex gap-3">
+      <button id="btnBack" class="flex-1 rounded-xl border border-slate-700 px-4 py-3 font-semibold text-slate-200 active:scale-95">Voltar</button>
+      <button id="btnNext" class="flex-1 rounded-xl bg-cyan-500 px-4 py-3 font-semibold text-slate-950 active:scale-95">Avançar</button>
+    </div>
+  </section>
+
+  <!-- Cadastro -->
+  <section id="view-register" class="view hidden">
+    <h2 class="text-2xl font-bold">Quase lá!</h2>
+    <p class="mt-2 text-slate-300">Preencha seus dados para ver o resultado.</p>
+    <form id="form" class="mt-5 space-y-4" novalidate>
+      <div>
+        <label for="nome" class="mb-1 block text-sm text-slate-300">Nome completo</label>
+        <input id="nome" name="nome" type="text" autocomplete="name" maxlength="120" required class="field">
+      </div>
+      <div>
+        <label for="telefone" class="mb-1 block text-sm text-slate-300">Telefone (com DDD)</label>
+        <input id="telefone" name="telefone" type="tel" inputmode="tel" autocomplete="tel" maxlength="15" placeholder="(99) 99999-9999" required class="field">
+      </div>
+      <div>
+        <label for="email" class="mb-1 block text-sm text-slate-300">E-mail</label>
+        <input id="email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="120" required class="field">
+        <div id="googleWrap" class="mt-3 hidden">
+          <p class="mb-2 text-xs text-slate-400">Ao clicar abaixo, você autoriza o uso do e-mail da sua conta Google apenas para preencher este campo.</p>
+          <div id="googleBtn"></div>
+        </div>
+      </div>
+      <div class="flex gap-3 pt-2">
+        <button type="button" id="btnBackForm" class="flex-1 rounded-xl border border-slate-700 px-4 py-3 font-semibold text-slate-200 active:scale-95">Voltar</button>
+        <button type="submit" id="btnSubmit" class="flex-1 rounded-xl bg-cyan-500 px-4 py-3 font-semibold text-slate-950 active:scale-95 disabled:opacity-60">Ver resultado</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Resultado -->
+  <section id="view-result" class="view hidden">
+    <h2 class="text-2xl font-bold">Área de identificação</h2>
+    <p class="mt-2 text-slate-300">Suas respostas foram registradas com sucesso. Com base nelas, você se identifica com a área:</p>
+    <div id="results" class="mt-5"></div>
+  </section>
+
+</main>
+
+<script>
+/* ===== CONFIGURAÇÃO: edite apenas este bloco ===== */
+const CONFIG = {
+  // URL do Web App do Google Apps Script (termina em /exec)
+  APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbyskSs6AYGB0NJL8oE05rt6jbvnLn7_ngOZet3xG88dT4vH7j63KGYjC0wCneKCBYx4yw/exec",
+
+  // ID de cliente OAuth do Google (opcional). Se vazio, o e-mail é só manual.
+  GOOGLE_CLIENT_ID: ""
+};
+</script>
+<script>
+(function () {
+  'use strict';
+
+  const QUESTIONS = [
+    { area: 'Desenvolvimento de Software',
+      title: 'Qual das atividades abaixo você mais gostaria de realizar profissionalmente na área de desenvolvimento de software?',
+      options: {
+        A: 'Desenvolver sites, aplicativos e sistemas que facilitem as atividades do dia a dia.',
+        B: 'Criar funcionalidades, estruturar bancos de dados e desenvolver a lógica por trás das aplicações.',
+        C: 'Trabalhar no desenvolvimento completo de soluções digitais, desde a interface visual até o funcionamento do sistema.' } },
+    { area: 'Gestão e Tecnologia',
+      title: 'Qual das seguintes atividades mais combina com seu perfil na área de gestão e tecnologia?',
+      options: {
+        A: 'Planejando e organizando projetos, definindo metas e acompanhando resultados.',
+        B: 'Liderando equipes, distribuindo tarefas e tomando decisões para alcançar objetivos.',
+        C: 'Gerenciando recursos, prazos e processos para melhorar o funcionamento de projetos tecnológicos.' } },
+    { area: 'Inteligência Artificial e Dados',
+      title: 'Qual das seguintes atividades você teria mais interesse em desenvolver na área de inteligência artificial e dados?',
+      options: {
+        A: 'Desenvolver soluções utilizando inteligência artificial para automatizar tarefas e resolver problemas.',
+        B: 'Analisar grandes volumes de dados para identificar padrões e auxiliar na tomada de decisões.',
+        C: 'Criar sistemas inteligentes capazes de aprender, interpretar informações e realizar previsões.' } }
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const state = { q: 0, answers: [null, null, null], submissionId: null, sending: false };
+  let msgTimer;
+
+  function showMsg(text, type) {
+    const el = $('msg');
+    el.textContent = text;
+    el.className = 'mb-4 rounded-xl border px-4 py-3 text-sm ' + (type === 'ok'
+      ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200'
+      : 'border-rose-500/40 bg-rose-500/10 text-rose-200');
+    clearTimeout(msgTimer);
+    if (type === 'ok') msgTimer = setTimeout(hideMsg, 4000);
+  }
+  function hideMsg() { $('msg').className = 'mb-4 hidden'; }
+
+  function showView(name, step) {
+    document.querySelectorAll('.view').forEach((v) => {
+      v.classList.toggle('active', v.id === 'view-' + name);
+      v.classList.toggle('hidden', v.id !== 'view-' + name);
+    });
+    $('introBg').classList.toggle('active', name === 'intro');
+    $('appHeader').classList.toggle('hidden', name === 'intro');
+    const p = $('progress');
+    if (step) {
+      p.classList.remove('hidden');
+      $('progressLabel').textContent = step.label;
+      $('progressPct').textContent = step.pct + '%';
+      $('progressBar').style.width = step.pct + '%';
+    } else { p.classList.add('hidden'); }
+    hideMsg();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function renderQuestion() {
+    const q = QUESTIONS[state.q];
+    $('qTitle').textContent = q.title;
+    const box = $('qOptions');
+    box.innerHTML = '';
+    Object.entries(q.options).forEach(([letter, text]) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'option' + (state.answers[state.q] === letter ? ' selected' : '');
+      b.setAttribute('aria-pressed', state.answers[state.q] === letter);
+      const l = document.createElement('span'); l.className = 'letter'; l.textContent = letter;
+      b.append(l, document.createTextNode(text));
+      b.addEventListener('click', () => {
+        state.answers[state.q] = letter;
+        box.querySelectorAll('.option').forEach((o) => { o.classList.remove('selected'); o.setAttribute('aria-pressed', 'false'); });
+        b.classList.add('selected'); b.setAttribute('aria-pressed', 'true');
+        hideMsg();
+      });
+      box.appendChild(b);
+    });
+    $('btnNext').textContent = state.q === 2 ? 'Ir para o cadastro' : 'Avançar';
+    showView('quiz', { label: 'Pergunta ' + (state.q + 1) + ' de 3', pct: (state.q + 1) * 25 });
+  }
+
+  $('btnStart').addEventListener('click', () => { state.q = 0; renderQuestion(); });
+  $('btnBack').addEventListener('click', () => {
+    if (state.q === 0) return showView('intro');
+    state.q--; renderQuestion();
+  });
+  $('btnNext').addEventListener('click', () => {
+    if (!state.answers[state.q]) return showMsg('Selecione uma alternativa para continuar.', 'err');
+    if (state.q < 2) { state.q++; renderQuestion(); }
+    else showView('register', { label: 'Cadastro', pct: 100 });
+  });
+  $('btnBackForm').addEventListener('click', () => { state.q = 2; renderQuestion(); });
+
+  // ---------- Máscara de telefone (Brasil) ----------
+  function maskPhone(d) {
+    if (!d) return '';
+    if (d.length <= 2) return '(' + d;
+    const ddd = d.slice(0, 2), r = d.slice(2);
+    if (d.length <= 6) return '(' + ddd + ') ' + r;
+    if (d.length <= 10) return '(' + ddd + ') ' + r.slice(0, 4) + '-' + r.slice(4);
+    return '(' + ddd + ') ' + r.slice(0, 5) + '-' + r.slice(5);
+  }
+  let prevDigits = '';
+  const phone = $('telefone');
+  phone.addEventListener('beforeinput', (e) => {
+    if (e.inputType === 'insertText' && e.data && /\D/.test(e.data)) e.preventDefault();
+  });
+  phone.addEventListener('input', (e) => {
+    let d = phone.value.replace(/\D/g, '');
+    if (d.length > 11 && d.indexOf('55') === 0) d = d.slice(2);   // colou com +55
+    d = d.slice(0, 11);
+    // apagar só um caractere de formatação ("-", ")") remove o último dígito
+    if (e.inputType && e.inputType.indexOf('delete') === 0 && d === prevDigits) d = d.slice(0, -1);
+    prevDigits = d;
+    phone.value = maskPhone(d);
+  });
+
+  // ---------- Cadastro e envio ----------
+  const newId = () => (crypto.randomUUID ? crypto.randomUUID()
+    : 'id-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
+
+  function validate(d) {
+    if (d.nome.length < 5 || d.nome.indexOf(' ') === -1) return 'Informe seu nome completo.';
+    const digits = d.telefone.replace(/\D/g, '');
+    const okDdd = digits.length >= 2 && Number(digits.slice(0, 2)) >= 11;
+    if (!okDdd || (digits.length !== 10 && digits.length !== 11) || (digits.length === 11 && digits[2] !== '9')) {
+      return 'Informe um telefone válido com DDD, ex.: (99) 99999-9999.';
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) return 'Informe um e-mail válido.';
+    return null;
+  }
+
+  function setSending(on) {
+    state.sending = on;
+    const b = $('btnSubmit');
+    b.disabled = on;
+    b.textContent = on ? 'Salvando...' : 'Ver resultado';
+  }
+
+  async function save(payload) {
+    if (!CONFIG.APPS_SCRIPT_URL || CONFIG.APPS_SCRIPT_URL.indexOf('https://') !== 0) {
+      throw new Error('A aplicação ainda não foi conectada à planilha (bloco CONFIG do index.html).');
+    }
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 20000);
+    try {
+      // text/plain evita o preflight CORS, que o Apps Script não suporta.
+      const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload),
+        signal: ctrl.signal
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Não foi possível salvar seus dados.');
+      return data;
+    } catch (err) {
+      if (err.name === 'AbortError' || err instanceof TypeError) {
+        throw new Error('Falha de conexão. Verifique sua internet e tente novamente.');
+      }
+      throw err;
+    } finally { clearTimeout(timer); }
+  }
+
+  $('form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (state.sending) return;
+    const d = {
+      nome: $('nome').value.trim(),
+      telefone: $('telefone').value.trim(),
+      email: $('email').value.trim()
+    };
+    const problem = validate(d);
+    if (problem) return showMsg(problem, 'err');
+
+    // O mesmo ID é reutilizado em novas tentativas: o servidor ignora duplicatas.
+    state.submissionId = state.submissionId || newId();
+    setSending(true);
+    try {
+      const data = await save({ id: state.submissionId, ...d, respostas: state.answers });
+      renderResults(data && data.area);
+    } catch (err) {
+      showMsg(err.message, 'err');
+    } finally { setSending(false); }
+  });
+
+  // Regra de identificação (edite aqui, se quiser mudar):
+  // cada letra escolhida soma 1 ponto para uma área; vence a área com mais respostas.
+  // Se houver empate (uma resposta para cada área), vale a área da resposta da pergunta 1.
+  const AREA_POR_LETRA = { A: 0, B: 1, C: 2 };   // 0 = Desenvolvimento, 1 = Gestão, 2 = IA e Dados
+  function identificarArea(answers) {
+    const pontos = [0, 0, 0];
+    answers.forEach((l) => { pontos[AREA_POR_LETRA[l]]++; });
+    const max = Math.max.apply(null, pontos);
+    const empatadas = pontos.map((p, i) => (p === max ? i : -1)).filter((i) => i >= 0);
+    return empatadas.length === 1 ? empatadas[0] : AREA_POR_LETRA[answers[0]];
+  }
+
+  // Mostra a área que a planilha registrou (se vier na resposta); senão aplica a mesma regra aqui.
+  function renderResults(areaServidor) {
+    const icons = ['💻', '📊', '🤖'];
+    let i = QUESTIONS.findIndex((q) => q.area === areaServidor);
+    if (i < 0) i = identificarArea(state.answers);
+    const box = $('results');
+    box.innerHTML = '';
+    const card = document.createElement('article');
+    card.className = 'rounded-2xl border border-cyan-400/40 bg-slate-900 p-6 text-center';
+    const ic = document.createElement('div');
+    ic.className = 'text-5xl';
+    ic.textContent = icons[i];
+    const h = document.createElement('h3');
+    h.className = 'mt-3 text-2xl font-bold text-cyan-300';
+    h.textContent = QUESTIONS[i].area;
+    card.append(ic, h);
+    box.appendChild(card);
+    showView('result');
+    showMsg('Dados salvos com sucesso!', 'ok');
+  }
+
+  // ---------- Login Google (opcional) ----------
+  function decodeJwt(token) {
+    const b64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const json = decodeURIComponent(atob(b64).split('').map((c) => '%' + ('0' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+    return JSON.parse(json);
+  }
+
+  window.initGoogle = function () {
+    if (!CONFIG.GOOGLE_CLIENT_ID || !window.google || !google.accounts || !google.accounts.id) return;
+    try {
+      google.accounts.id.initialize({
+        client_id: CONFIG.GOOGLE_CLIENT_ID,
+        callback: (resp) => {
+          try {
+            const info = decodeJwt(resp.credential);
+            if (info.aud !== CONFIG.GOOGLE_CLIENT_ID || !info.email || info.email_verified === false) throw new Error('invalid');
+            $('email').value = info.email;
+            showMsg('E-mail preenchido pela sua conta Google.', 'ok');
+          } catch (_) { showMsg('Não foi possível obter o e-mail. Preencha manualmente.', 'err'); }
+        }
+      });
+      google.accounts.id.renderButton($('googleBtn'), { theme: 'filled_black', size: 'large', text: 'continue_with', locale: 'pt-BR' });
+      $('googleWrap').classList.remove('hidden');
+    } catch (_) { /* sem login Google: o e-mail segue manual */ }
+  };
+})();
+</script>
+<script src="https://accounts.google.com/gsi/client" async defer onload="initGoogle()"></script>
+</body>
+</html>
